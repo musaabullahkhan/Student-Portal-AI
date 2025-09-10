@@ -1,41 +1,74 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard — Student Notes</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Notes Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
 </head>
-<body id="dashboard">
-  <div class="card">
-    <!-- Top bar -->
-    <div class="brand" style="display: flex; justify-content: space-between; align-items: center;">
-      <h1 id="welcome">Welcome Student</h1>
-      <button id="logoutBtn">Logout</button>
-    </div>
+<body class="bg-slate-100 flex justify-center items-center min-h-screen p-4">
 
-    <h2>Your Notes</h2>
-    <div class="notes">
-      <div class="note-card">
-        <h3>Math Notes</h3>
-        <a href="notes/math.pdf" target="_blank">📄 Open PDF</a>
+  <div class="dashboard-container bg-white rounded-xl shadow-lg w-full max-w-4xl p-6 md:p-10 flex flex-col gap-8">
+    
+    <!-- Header Section -->
+    <header class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-2">
+        <h1 id="welcome" class="text-3xl md:text-4xl font-bold text-gray-800">Welcome, User</h1>
+        <svg class="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
       </div>
-      <div class="note-card">
-        <h3>Physics Notes</h3>
-        <a href="notes/physics.pdf" target="_blank">📄 Open PDF</a>
+      <button id="logoutBtn" class="bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-600 transition-colors duration-300">
+        Logout
+      </button>
+    </header>
+
+    <!-- File List Section -->
+    <section>
+      <h2 class="text-2xl font-semibold text-gray-700 mb-6">Your Files</h2>
+      <div id="fileList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 custom-scrollbar overflow-y-auto max-h-[60vh] p-1">
+        <!-- File items will be dynamically inserted here -->
       </div>
-      <div class="note-card">
-        <h3>Chemistry Notes</h3>
-        <a href="notes/chemistry.pdf" target="_blank">📄 Open PDF</a>
-      </div>
+    </section>
+
+  </div>
+
+  <!-- Message Modal -->
+  <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 invisible opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-xl p-8 shadow-2xl text-center max-w-sm w-full">
+      <p id="messageText" class="text-lg text-gray-800 font-medium mb-4"></p>
+      <button id="closeModalBtn" class="bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors duration-300">
+        OK
+      </button>
     </div>
   </div>
 
-  <!-- ✅ Firebase SDKs -->
+  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
+    
     const firebaseConfig = {
       apiKey: "AIzaSyBVnqeK19IG8idjKYw0rhzbfjmlQEQHV2U",
       authDomain: "student-notes-5d5b2.firebaseapp.com",
@@ -48,19 +81,84 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Protect dashboard
+    const showMessage = (message, callback) => {
+      const modal = document.getElementById('messageModal');
+      const messageText = document.getElementById('messageText');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      messageText.textContent = message;
+      modal.classList.add('show');
+      modal.classList.remove('invisible');
+      modal.classList.add('visible', 'opacity-100');
+
+      closeModalBtn.onclick = () => {
+        modal.classList.remove('visible', 'opacity-100');
+        modal.classList.add('invisible');
+        if (callback) callback();
+      };
+    };
+
+    const files = [
+        { name: 'Access PDF', type: 'pdf', path: 'notes/Access.pdf' },
+        { name: 'History of the Roman Empire', type: 'pdf', path: 'files/roman-empire.pdf' },
+        { name: 'Chemistry Lab Report 1', type: 'pdf', path: 'files/chem-lab1.pdf' },
+        { name: 'Physics Concepts', type: 'pdf', path: 'files/physics-concepts.pdf' },
+        { name: 'World History Timeline', type: 'pdf', path: 'files/history-timeline.pdf' },
+        { name: 'Biology Ecosystems', type: 'pdf', path: 'files/biology-ecosystems.pdf' },
+        { name: 'Data Structures and Algorithms', type: 'pdf', path: 'files/dsa.pdf' },
+        { name: 'Introduction to Programming', type: 'pdf', path: 'files/intro-programming.pdf' },
+        { name: 'Economics Principles', type: 'pdf', path: 'files/economics-principles.pdf' },
+        { name: 'Advanced Algebra', type: 'pdf', path: 'files/adv-algebra.pdf' },
+        { name: 'English Literature Analysis', type: 'docx', path: 'files/lit-analysis.docx' },
+        { name: 'Computer Science Final Project', type: 'docx', path: 'files/cs-project.docx' },
+        { name: 'Art History Research Paper', type: 'docx', path: 'files/art-history.docx' },
+        { name: 'Geology of the Earth', type: 'docx', path: 'files/geology-earth.docx' },
+        { name: 'Creative Writing Prompts', type: 'docx', path: 'files/writing-prompts.docx' },
+        { name: 'Marketing Strategy Plan', type: 'docx', path: 'files/marketing-plan.docx' },
+        { name: 'Financial Accounting Basics', type: 'docx', path: 'files/accounting-basics.docx' },
+        { name: 'Spanish I Vocabulary', type: 'docx', path: 'files/spanish-vocab.docx' },
+        { name: 'Music Theory Fundamentals', type: 'docx', path: 'files/music-theory.docx' },
+        { name: 'Public Speaking Tips', type: 'docx', path: 'files/public-speaking.docx' },
+        // <-- Add new files here!
+        { name: 'Space Exploration Study', type: 'pdf', path: 'files/space-exploration.pdf' },
+    ];
+
+    const renderFiles = () => {
+      const fileListContainer = document.getElementById('fileList');
+      fileListContainer.innerHTML = '';
+      files.forEach(file => {
+        const fileCard = document.createElement('div');
+        fileCard.className = 'file-card bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col gap-2 transition-transform duration-200 hover:scale-105 hover:shadow-lg';
+        
+        const fileNameHeading = document.createElement('h3');
+        fileNameHeading.className = 'text-lg font-semibold text-gray-800';
+        fileNameHeading.textContent = file.name;
+
+        const downloadLink = document.createElement('a');
+        downloadLink.className = 'text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200';
+        downloadLink.href = file.path;
+        downloadLink.download = file.name;
+        // The target="_blank" attribute was removed from this line.
+
+        fileCard.appendChild(fileNameHeading);
+        fileCard.appendChild(downloadLink);
+        fileListContainer.appendChild(fileCard);
+      });
+    };
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        document.getElementById("welcome").innerText = `Welcome, ${user.email}`;
+        document.getElementById("welcome").textContent = `Welcome, ${user.email}`;
+        renderFiles();
       } else {
-        window.location.href = "login.html";
+        window.location.replace("login.html");
       }
     });
 
-    // Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
       signOut(auth).then(() => {
-        window.location.href = "login.html";
+        window.location.replace("login.html");
+      }).catch((error) => {
+        showMessage("Logout failed: " + error.message);
       });
     });
   </script>
