@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register — Student Notes</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body id="register">
+  <div class="card">
+    <div class="brand">
+      <h1>Student Notes</h1>
+      <p>Create your account</p>
+    </div>
+
+    <form id="registerForm" autocomplete="off">
+      <div>
+        <label for="registerEmail">Email</label>
+        <input id="registerEmail" type="email" required>
+      </div>
+
+      <div>
+        <label for="registerPassword">Password</label>
+        <input id="registerPassword" type="password" required>
+      </div>
+
+      <div>
+        <label for="registerConfirm">Confirm Password</label>
+        <input id="registerConfirm" type="password" required>
+      </div>
+
+      <button type="submit">Register</button>
+      <small class="link">Already registered? <a href="login.html">Login</a></small>
+    </form>
+  </div>
+
+  <!-- ✅ Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVnqeK19IG8idjKYw0rhzbfjmlQEQHV2U",
+      authDomain: "student-notes-5d5b2.firebaseapp.com",
+      projectId: "student-notes-5d5b2",
+      storageBucket: "student-notes-5d5b2.appspot.com",
+      messagingSenderId: "859137535173",
+      appId: "1:859137535173:web:9722d1dd0e324bacc154ac"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Register user
+    document.getElementById("registerForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("registerEmail").value;
+      const password = document.getElementById("registerPassword").value;
+      const confirm = document.getElementById("registerConfirm").value;
+
+      if (password !== confirm) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          alert("Registration successful! Please login.");
+          window.location.href = "login.html";
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    });
+  </script>
+</body>
+</html>

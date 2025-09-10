@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forgot Password — Student Notes</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body id="forgot">
+  <div class="card">
+    <div class="brand">
+      <h1>Student Notes</h1>
+      <p>Reset your password</p>
+    </div>
+
+    <form id="forgotForm" autocomplete="off">
+      <div>
+        <label for="resetEmail">Email</label>
+        <input id="resetEmail" type="email" placeholder="Enter your registered email" required>
+      </div>
+      <button type="submit">Send Reset Link</button>
+      <small class="link"><a href="login.html">Back to Login</a></small>
+    </form>
+  </div>
+
+  <!-- ✅ Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVnqeK19IG8idjKYw0rhzbfjmlQEQHV2U",
+      authDomain: "student-notes-5d5b2.firebaseapp.com",
+      projectId: "student-notes-5d5b2",
+      storageBucket: "student-notes-5d5b2.appspot.com",
+      messagingSenderId: "859137535173",
+      appId: "1:859137535173:web:9722d1dd0e324bacc154ac"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("forgotForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("resetEmail").value;
+
+      sendPasswordResetEmail(auth, email)
+        .then(() => {
+          alert("Password reset link sent! Check your email.");
+          window.location.href = "login.html";
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    });
+  </script>
+</body>
+</html>

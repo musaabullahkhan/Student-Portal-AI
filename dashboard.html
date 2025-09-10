@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — Student Notes</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body id="dashboard">
+  <div class="card">
+    <!-- Top bar -->
+    <div class="brand" style="display: flex; justify-content: space-between; align-items: center;">
+      <h1 id="welcome">Welcome Student</h1>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <h2>Your Notes</h2>
+    <div class="notes">
+      <div class="note-card">
+        <h3>Math Notes</h3>
+        <a href="notes/math.pdf" target="_blank">📄 Open PDF</a>
+      </div>
+      <div class="note-card">
+        <h3>Physics Notes</h3>
+        <a href="notes/physics.pdf" target="_blank">📄 Open PDF</a>
+      </div>
+      <div class="note-card">
+        <h3>Chemistry Notes</h3>
+        <a href="notes/chemistry.pdf" target="_blank">📄 Open PDF</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVnqeK19IG8idjKYw0rhzbfjmlQEQHV2U",
+      authDomain: "student-notes-5d5b2.firebaseapp.com",
+      projectId: "student-notes-5d5b2",
+      storageBucket: "student-notes-5d5b2.appspot.com",
+      messagingSenderId: "859137535173",
+      appId: "1:859137535173:web:9722d1dd0e324bacc154ac"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Protect dashboard
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("welcome").innerText = `Welcome, ${user.email}`;
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
+    });
+  </script>
+</body>
+</html>
