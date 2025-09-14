@@ -134,7 +134,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getStorage, ref, uploadBytes, deleteObject, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    import { getStorage, ref, uploadBytes, deleteObject, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -166,28 +166,6 @@
       };
     };
 
-    const files = [
-      { name: 'Access PDF', type: 'pdf', path: 'notes/Access.pdf', class: 12 },
-      { name: 'Algorithm and Flowchart', type: 'pdf', path: 'notes/Algorithm & Flowchart.pdf', class: 11 },
-      { name: 'Arihant Computer Awareness Book', type: 'pdf', path: 'notes/Arihant Computer Awareness Book-1.pdf', class: 12 },
-      { name: 'Basics Of Computer Science Tutorial', type: 'pdf', path: 'notes/Basics Of Computer Science Tutorial.pdf', class: 11 },
-      { name: 'C Language', type: 'pdf', path: 'notes/C Language.pdf', class: 12 },
-      { name: 'C Practical Viva Q&A', type: 'pdf', path: 'notes/C Practical Viva Questions & Answers.pdf', class: 12 },
-      { name: 'CS-XI - Syllabus 2024-25 Exam Questions in docx', type: 'docx', path: 'notes/Computer Science XI - Syllabus 2024-25 Exam Questions-.docx', class: 11 },
-      { name: 'CS-XI - Syllabus 2024-25 Exam Questions in pdf', type: 'pdf', path: 'notes/Computer Science XI - Syllabus 2024-25 Exam Questions-.pdf', class: 11 },
-      { name: 'CS-XII - C Language Exam Questions in docx', type: 'docx', path: 'notes/Computer Science XII - C Language Exam Questions.docx', class: 12 },
-      { name: 'CS-XII - C Language Exam Questions in PDF', type: 'pdf', path: 'notes/Computer Science XII - C Language Exam Questions.pdf', class: 12 },
-      { name: 'Computer SQs Notes Chapter # 1', type: 'pdf', path: 'notes/Computer SQs Notes Chapter 1.pdf', class: 11 },
-      { name: 'CS-XII in PDF', type: 'pdf', path: 'notes/Computer-Science-2nd-Year.pdf', class: 12 },
-      { name: 'Data Structure and Algorithms Chapter 1', type: 'pdf', path: 'notes/Data structure and Algorithm Chapter.1.pdf', class: 12 },
-      { name: 'Logic Building Concepts In C', type: 'pdf', path: 'notes/Logic Building Concepts in C.pdf', class: 12 },
-      { name: 'Practical-C', type: 'docx', path: 'notes/Practical-c.docx', class: 12 },
-      { name: 'The Ultimate C handbook', type: 'pdf', path: 'notes/The Ultimate C Handbook.pdf', class: 12 },
-      { name: 'DSA using C - Quick Guide', type: 'pdf', path: 'notes/tutorialspoint.com-DSA using C - Quick Guide.pdf', class: 12 },
-      { name: 'XII~CS in docx', type: 'docx', path: 'notes/XII~CS.docx', class: 12 },
-      { name: 'XII~CS in PDF', type: 'pdf', path: 'notes/XII~CS.pdf', class: 12 },
-    ];
-    
     // Admin Email address
     const ADMIN_EMAIL = 'waseemullahkhan@yahoo.com';
 
@@ -200,42 +178,94 @@
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadMessage = document.getElementById('uploadMessage');
     const fileClassSelect = document.getElementById('fileClass');
+    
+    // --- Authentication and Role-Based UI ---
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        document.getElementById("welcome").textContent = `Welcome, ${user.email}`;
 
-    const renderFiles = (classNumber, isAdmin) => {
-      fileListContainer.innerHTML = '';
-      const filteredFiles = files.filter(file => file.class === classNumber);
-      filteredFiles.forEach(file => {
-        const fileCard = document.createElement('div');
-        fileCard.className = 'file-card bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col gap-2 transition-transform duration-200 hover:scale-105 hover:shadow-lg';
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-        const fileNameHeading = document.createElement('h3');
-        fileNameHeading.className = 'text-lg font-semibold text-gray-800';
-        fileNameHeading.textContent = file.name;
-
-        const downloadLink = document.createElement('a');
-        downloadLink.className = 'text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200';
-        downloadLink.href = file.path;
-        downloadLink.download = file.name;
-        downloadLink.textContent = `Download ${file.type.toUpperCase()}`;
-        
-        fileCard.appendChild(fileNameHeading);
-        fileCard.appendChild(downloadLink);
-
-        if (isAdmin) {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'bg-red-500 text-white font-semibold py-1 px-4 rounded-lg hover:bg-red-600 transition-colors duration-300 mt-2';
-          deleteBtn.textContent = 'Delete';
-          deleteBtn.onclick = async () => {
-            const confirmDelete = confirm(`Are you sure you want to delete "${file.name}"?`);
-            if (confirmDelete) {
-              await deleteFile(file.path, file.name);
-            }
-          };
-          fileCard.appendChild(deleteBtn);
+        let isAdmin = false;
+        if (userDoc.exists() && userDoc.data().role === 'admin') {
+          isAdmin = true;
+        } else {
+          if (user.email === ADMIN_EMAIL) {
+            await setDoc(userDocRef, { email: user.email, role: 'admin' });
+            isAdmin = true;
+          }
         }
 
-        fileListContainer.appendChild(fileCard);
+        if (isAdmin) {
+          adminSection.classList.remove('hidden');
+        } else {
+          adminSection.classList.add('hidden');
+        }
+
+        showFolders(); // Initial view is folders
+      } else {
+        window.location.replace("login.html");
+      }
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.replace("login.html");
+      }).catch((error) => {
+        showMessage("Logout failed: " + error.message);
       });
+    });
+
+    // --- File System Logic (Folders and Files) ---
+    const renderFiles = async (classNumber, isAdmin) => {
+      fileListContainer.innerHTML = '';
+      const listRef = ref(storage, `notes/Class${classNumber}`);
+      try {
+        const res = await listAll(listRef);
+        if (res.items.length === 0) {
+          fileListContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">No files in this folder.</p>`;
+        }
+        res.items.forEach(async (itemRef) => {
+          const downloadUrl = await getDownloadURL(itemRef);
+          const fileName = itemRef.name;
+          const fileExtension = fileName.split('.').pop();
+          
+          const fileCard = document.createElement('div');
+          fileCard.className = 'file-card bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col gap-2 transition-transform duration-200 hover:scale-105 hover:shadow-lg';
+          
+          const fileNameHeading = document.createElement('h3');
+          fileNameHeading.className = 'text-lg font-semibold text-gray-800';
+          fileNameHeading.textContent = fileName;
+          
+          const downloadLink = document.createElement('a');
+          downloadLink.className = 'text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200';
+          downloadLink.href = downloadUrl;
+          downloadLink.download = fileName;
+          downloadLink.textContent = `Download ${fileExtension.toUpperCase()}`;
+
+          fileCard.appendChild(fileNameHeading);
+          fileCard.appendChild(downloadLink);
+
+          if (isAdmin) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'bg-red-500 text-white font-semibold py-1 px-4 rounded-lg hover:bg-red-600 transition-colors duration-300 mt-2';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.onclick = async () => {
+              const confirmDelete = confirm(`Are you sure you want to delete "${fileName}"?`);
+              if (confirmDelete) {
+                await deleteFile(itemRef);
+              }
+            };
+            fileCard.appendChild(deleteBtn);
+          }
+          fileListContainer.appendChild(fileCard);
+        });
+      } catch (error) {
+        console.error("Error listing files:", error);
+        showMessage("Failed to load files. Please check the console for details.");
+      }
     };
 
     const showFolders = () => {
@@ -244,18 +274,23 @@
       backBtn.classList.add('hidden');
     };
 
-    const showFiles = (classNumber, isAdmin) => {
+    const showFiles = async (classNumber) => {
       folderView.classList.add('hidden');
       fileListView.classList.remove('hidden');
       backBtn.classList.remove('hidden');
-      renderFiles(classNumber, isAdmin);
+      
+      const user = auth.currentUser;
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
+
+      await renderFiles(classNumber, isAdmin);
     };
 
     document.querySelectorAll('.folder-card').forEach(folder => {
       folder.addEventListener('click', (event) => {
         const classNumber = parseInt(event.currentTarget.dataset.class);
-        const isAdmin = adminSection.classList.contains('admin-visible');
-        showFiles(classNumber, isAdmin);
+        showFiles(classNumber);
       });
     });
 
@@ -282,8 +317,7 @@
         uploadMessage.textContent = 'File uploaded successfully!';
         uploadMessage.style.color = 'green';
         showMessage(`Successfully uploaded ${fileName} to Class ${fileClass}!`);
-        // Note: The files array is hardcoded. For a live app, you'd want to dynamically fetch from a database.
-        // For this example, we'll just alert the user.
+        showFiles(parseInt(fileClass)); // Reload the files for the current class
       } catch (error) {
         uploadMessage.textContent = 'Upload failed: ' + error.message;
         uploadMessage.style.color = 'red';
@@ -292,56 +326,18 @@
       }
     });
 
-    const deleteFile = async (filePath, fileName) => {
-      const fileRef = ref(storage, filePath);
+    const deleteFile = async (itemRef) => {
       try {
-        await deleteObject(fileRef);
-        showMessage(`${fileName} has been deleted successfully.`);
-        // Note: The files array is hardcoded. For a live app, you'd remove the item from the database.
-        // For this example, you'd need to manually remove it from the 'files' array in the code and refresh.
-        // For demonstration purposes, we will just alert the user.
+        await deleteObject(itemRef);
+        showMessage(`${itemRef.name} has been deleted successfully.`);
+        // Reload the files for the current class after deletion
+        const currentClass = parseInt(document.querySelector('.folder-card.hidden')?.dataset.class || fileClassSelect.value);
+        showFiles(currentClass);
       } catch (error) {
         showMessage('File deletion failed. Please check the console for details.');
         console.error('Deletion Error:', error);
       }
     };
-
-    // --- Authentication and Role-Based UI ---
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        document.getElementById("welcome").textContent = `Welcome, ${user.email}`;
-
-        // Check user role from Firestore
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists() && userDoc.data().role === 'admin') {
-          adminSection.classList.remove('hidden');
-          adminSection.classList.add('admin-visible');
-        } else {
-           // For a new admin, automatically create the user document.
-           // You would only do this once for the designated admin email.
-           if (user.email === ADMIN_EMAIL) {
-              await setDoc(userDocRef, { email: user.email, role: 'admin' });
-              adminSection.classList.remove('hidden');
-              adminSection.classList.add('admin-visible');
-           } else {
-              adminSection.classList.add('hidden');
-           }
-        }
-        showFolders(); // Initial view is folders
-      } else {
-        window.location.replace("login.html");
-      }
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      signOut(auth).then(() => {
-        window.location.replace("login.html");
-      }).catch((error) => {
-        showMessage("Logout failed: " + error.message);
-      });
-    });
   </script>
 </body>
 
