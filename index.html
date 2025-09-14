@@ -34,11 +34,11 @@
       <small class="link">Already registered? <a href="login.html">Login</a></small>
     </form>
   </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBVnqeK19IG8idjKYw0rhzbfjmlQEQHV2U",
       authDomain: "student-notes-5d5b2.firebaseapp.com",
@@ -51,34 +51,42 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    document.getElementById("loginForm").addEventListener("submit", (e) => {
+    // Register user
+    document.getElementById("registerForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
+      const email = document.getElementById("registerEmail").value;
+      const password = document.getElementById("registerPassword").value;
+      const confirm = document.getElementById("registerConfirm").value;
 
-      signInWithEmailAndPassword(auth, email, password)
+      if (password !== confirm) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          const user = userCredential.user;
-          if (user.emailVerified) {
-            window.location.href = "dashboard.html";
-          } else {
-            // Email is not verified, resend verification email
-            user.sendEmailVerification()
-              .then(() => {
-                alert("Your email is not verified. A new verification link has been sent to your inbox. Please check your email.");
-              })
-              .catch((error) => {
-                console.error("Error sending verification email:", error);
-                alert("Your email is not verified. Failed to send a new verification email. Please try again.");
-              });
-          }
+          // User created, now send the verification email
+          userCredential.user.sendEmailVerification()
+            .then(() => {
+              alert("Registration successful! A verification email has been sent. Please check your inbox.");
+              window.location.replace("login.html");
+            })
+            .catch((error) => {
+              console.error("Error sending verification email:", error);
+              alert("Registration successful, but failed to send verification email. Please try again or contact support.");
+            });
         })
         .catch((error) => {
-          alert(error.message);
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          if (errorCode === 'auth/email-already-in-use') {
+            alert("This email is already in use. Please use a different email or log in.");
+          } else {
+            alert(`Registration failed: ${errorMessage}`);
+            console.error(errorCode, errorMessage);
+          }
         });
     });
-  </script>
-  </script>
   </script>
 </body>
 </html>
