@@ -35,7 +35,6 @@
     </form>
   </div>
 
-  <!-- ✅ Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -66,14 +65,30 @@
       }
 
       createUserWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          alert("Registration successful! Please login.");
-          window.location.href = "login.html";
+        .then((userCredential) => {
+          // User created, now send the verification email
+          userCredential.user.sendEmailVerification()
+            .then(() => {
+              alert("Registration successful! A verification email has been sent. Please check your inbox.");
+              window.location.replace("login.html");
+            })
+            .catch((error) => {
+              console.error("Error sending verification email:", error);
+              alert("Registration successful, but failed to send verification email. Please try again or contact support.");
+            });
         })
         .catch((error) => {
-          alert(error.message);
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          if (errorCode === 'auth/email-already-in-use') {
+            alert("This email is already in use. Please use a different email or log in.");
+          } else {
+            alert(`Registration failed: ${errorMessage}`);
+            console.error(errorCode, errorMessage);
+          }
         });
     });
+  </script>
   </script>
 </body>
 </html>
