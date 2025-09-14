@@ -35,59 +35,23 @@
     </form>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-    // Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBVnqeK19IG8idjKYw0rhzbfjmlQEQHV2U",
-      authDomain: "student-notes-5d5b2.firebaseapp.com",
-      projectId: "student-notes-5d5b2",
-      storageBucket: "student-notes-5d5b2.appspot.com",
-      messagingSenderId: "859137535173",
-      appId: "1:859137535173:web:9722d1dd0e324bacc154ac"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    // Register user
-    document.getElementById("registerForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = document.getElementById("registerEmail").value;
-      const password = document.getElementById("registerPassword").value;
-      const confirm = document.getElementById("registerConfirm").value;
-
-      if (password !== confirm) {
-        alert("Passwords do not match!");
-        return;
-      }
-
-      createUserWithEmailAndPassword(auth, email, password)
+  signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          // User created, now send the verification email
-          userCredential.user.sendEmailVerification()
-            .then(() => {
-              alert("Registration successful! A verification email has been sent. Please check your inbox.");
-              window.location.replace("login.html");
-            })
-            .catch((error) => {
-              console.error("Error sending verification email:", error);
-              alert("Registration successful, but failed to send verification email. Please try again or contact support.");
+          const user = userCredential.user;
+          if (user.emailVerified) {
+            window.location.href = "dashboard.html";
+          } else {
+            // Email is not verified, log the user out and show an alert
+            signOut(auth).then(() => {
+              alert("Your email is not verified. Please check your inbox for a verification link.");
+            }).catch((error) => {
+              console.error("Logout failed:", error);
             });
+          }
         })
         .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          if (errorCode === 'auth/email-already-in-use') {
-            alert("This email is already in use. Please use a different email or log in.");
-          } else {
-            alert(`Registration failed: ${errorMessage}`);
-            console.error(errorCode, errorMessage);
-          }
+          alert(error.message);
         });
-    });
   </script>
   </script>
 </body>
